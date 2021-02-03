@@ -8,7 +8,6 @@ import java.lang.reflect.Field;
 
 import static net.australmc.core.AustralCore.log;
 import static net.australmc.core.config.mapper.ConfigFieldType.SUBPOJO;
-import static net.australmc.core.config.mapper.ConfigFieldType.getByType;
 import static org.reflections.ReflectionUtils.getAllFields;
 import static org.reflections.ReflectionUtils.withAnnotation;
 
@@ -23,14 +22,15 @@ public class ConfigMapper {
 
             for(final Field field : getAllFields(type, withAnnotation(ConfigField.class))) {
                 final String configKey = field.getAnnotation(ConfigField.class).value();
-                final ConfigFieldType configFieldType = getByType(field.getType());
+                final Class<?> fieldType = field.getType();
 
                 final Object fieldValueFromConfig;
 
-                if(SUBPOJO.equals(configFieldType)) {
-                    fieldValueFromConfig = mapToObject(section.getConfigurationSection(configKey), field.getType());
+                if(isSubpojo(fieldType)) {
+                    fieldValueFromConfig = mapToObject(section.getConfigurationSection(configKey), fieldType);
                 } else {
-                    fieldValueFromConfig = configFieldType.getConfigSupplier().get(configKey, section);
+                    fieldValueFromConfig = ConfigFieldType.getByType(fieldType).getConfigSupplier()
+                            .get(configKey, section);
                 }
 
                 field.setAccessible(true);
@@ -44,6 +44,33 @@ public class ConfigMapper {
             exception.printStackTrace();
             return null;
         }
+    }
+
+    public static <T> void mapToSection(final ConfigurationSection section, final T source) {
+        try {
+            for(final Field field : getAllFields(source.getClass(), withAnnotation(ConfigField.class))) {
+                field.setAccessible(true);
+
+                final Class<?> fieldType = field.getType();
+                final String key = field.getAnnotation(ConfigField.class).value();
+                final Object value = field.get(source);
+
+                if(isSubpojo(fieldType)) {
+                    mapToSection(section.createSection(key), value);
+                    continue;
+                }
+
+                section.set(key, value);
+            }
+        } catch (final Exception exception) {
+            log().severe("Could not map object to config section. Caused by:"
+                    + exception.getCause());
+            exception.printStackTrace();
+        }
+    }
+
+    private static boolean isSubpojo(final Class<?> type) {
+        return SUBPOJO.equals(ConfigFieldType.getByType(type));
     }
 
 }
