@@ -15,6 +15,7 @@
         <reflections.version>0.9.11</reflections.version>
         <lombok.version>1.18.12</lombok.version>
         <commons.version>1.9</commons.version>
+        <hikari.version>4.0.2</hikari.version>
     </properties>
 
     <repositories>
@@ -50,6 +51,12 @@
         </dependency>
 
         <!-- Other libs -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikari.version}</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
