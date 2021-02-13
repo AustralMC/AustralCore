@@ -16,7 +16,7 @@ import static net.australmc.core.AustralCore.log;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CommandRegistrator {
 
-    public static void registerAllClasses(JavaPlugin plugin, Set<Class<?>> classess) {
+    public static void registerAllCommands(JavaPlugin plugin, Set<Class<?>> classess) {
         Set<Class<?>> commandClasses = classess.stream()
                 .filter(clasz -> stream(clasz.getAnnotations()).map(Annotation::annotationType)
                         .anyMatch(CommandClass.class::equals))
