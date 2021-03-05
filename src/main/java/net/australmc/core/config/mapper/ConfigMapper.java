@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 
+import static java.util.Arrays.stream;
 import static net.australmc.core.AustralCore.log;
 import static net.australmc.core.config.mapper.ConfigFieldType.SUBPOJO;
 import static org.reflections.ReflectionUtils.getAllFields;
@@ -29,12 +30,14 @@ public class ConfigMapper {
                 if(isSubpojo(fieldType)) {
                     fieldValueFromConfig = mapToObject(section.getConfigurationSection(configKey), fieldType);
                 } else {
-                    fieldValueFromConfig = ConfigFieldType.getByType(fieldType).getConfigSupplier()
-                            .get(configKey, section);
+                    fieldValueFromConfig = ConfigFieldType.getByType(fieldType)
+                            .map(ConfigFieldType::getConfigSupplier)
+                            .map(supplier -> supplier.get(configKey, section))
+                            .orElse(null);
                 }
 
                 field.setAccessible(true);
-                field.set(instance, field.getType().cast(fieldValueFromConfig));
+                field.set(instance, fieldType.cast(fieldValueFromConfig));
             }
 
             return instance;
@@ -63,14 +66,14 @@ public class ConfigMapper {
                 section.set(key, value);
             }
         } catch (final Exception exception) {
-            log().severe("Could not map object to config section. Caused by:"
-                    + exception.getCause());
+            log().severe("Could not map object to config section.");
             exception.printStackTrace();
         }
     }
 
     private static boolean isSubpojo(final Class<?> type) {
-        return SUBPOJO.equals(ConfigFieldType.getByType(type));
+        return stream(ConfigFieldType.values())
+                .filter(configFieldType -> !SUBPOJO.equals(configFieldType))
+                .noneMatch(configFieldType -> configFieldType.getType().equals(type));
     }
-
 }
