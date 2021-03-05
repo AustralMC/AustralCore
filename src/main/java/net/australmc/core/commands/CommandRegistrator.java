@@ -6,7 +6,6 @@ import net.australmc.core.annotations.command.CommandClass;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.annotation.Annotation;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,13 +16,15 @@ import static net.australmc.core.AustralCore.log;
 public class CommandRegistrator {
 
     public static void registerAllCommands(JavaPlugin plugin, Set<Class<?>> classess) {
+        log().info("Registering commands of " + plugin.getName() + " plugin...");
         Set<Class<?>> commandClasses = classess.stream()
-                .filter(clasz -> stream(clasz.getAnnotations()).map(Annotation::annotationType)
-                        .anyMatch(CommandClass.class::equals))
+                .filter(clasz -> clasz.isAnnotationPresent(CommandClass.class))
                 .collect(Collectors.toSet());
+        log().info(commandClasses.size() + " commands found for " + plugin.getName());
 
         commandClasses.forEach(clasz -> {
             if(stream(clasz.getInterfaces()).noneMatch(CommandExecutor.class::equals)) {
+                log().warning("Command class " + clasz.getName() + " is not implementing CommandExecutor, ignoring...");
                 return;
             }
 
